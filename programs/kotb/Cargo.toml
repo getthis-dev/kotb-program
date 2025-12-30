@@ -1,0 +1,27 @@
+[package]
+name = "kotb"
+version = "2.0.1"
+description = "KOTB - King of the Block"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "kotb"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+idl-build = ["anchor-lang/idl-build"]
+mainnet = []
+devnet = []
+custom-heap = []
+custom-panic = []
+anchor-debug = []
+
+[dependencies]
+anchor-lang = "0.31.1"
+solana-security-txt = "1.1.1"
+
