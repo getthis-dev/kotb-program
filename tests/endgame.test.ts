@@ -296,5 +296,121 @@ describe("endgame", () => {
             const stateAfter = await program.account.gameState.fetch(gameStatePda);
             expect(stateAfter.lastBidder!.toBase58()).to.equal(actualWinner.publicKey.toBase58());
         });
+
+        describe("Invalid Pot Accounts", () => {
+            it("should fail when providing wrong pot account", async () => {
+                // Set slots_to_win to small value
+                await program.methods
+                    .updateSettings({
+                        slotsToWin: new anchor.BN(5),
+                        newAuthority: null,
+                        newFeeAccount: null,
+                        bidValueRateBps: null,
+                        feeBps: null,
+                        potBps: null,
+                        nextBps: null,
+                        bidValue: null,
+                    })
+                    .accounts({ settings: settingsPda })
+                    .rpc();
+
+                const winner = Keypair.generate();
+                const wrongPot = Keypair.generate().publicKey;
+
+                const airdropSig = await provider.connection.requestAirdrop(winner.publicKey, LAMPORTS_PER_SOL);
+                await provider.connection.confirmTransaction(airdropSig);
+
+                const winnerProvider = new anchor.AnchorProvider(
+                    provider.connection,
+                    new anchor.Wallet(winner),
+                    provider.opts
+                );
+                const winnerProgram = new anchor.Program<Kotb>(program.idl as anchor.Idl, winnerProvider);
+
+                // Place a bid
+                await winnerProgram.methods.bid().accounts({ feeAccount: feeAccount }).rpc();
+
+                const stateAfterBid = await program.account.gameState.fetch(gameStatePda);
+                const finalSlot = stateAfterBid.finalSlot.toNumber();
+
+                // Wait until final_slot is reached
+                let currentSlot = await provider.connection.getSlot();
+                while (currentSlot < finalSlot) {
+                    await new Promise((resolve) => setTimeout(resolve, 400));
+                    currentSlot = await provider.connection.getSlot();
+                }
+
+                // Try to call endgame with wrong pot account - should fail with ConstraintSeeds
+                try {
+                    await program.methods
+                        .endgame()
+                        .accountsPartial({
+                            winner: winner.publicKey,
+                            pot: wrongPot,
+                        })
+                        .rpc();
+                    expect.fail("Should have thrown error");
+                } catch (err: any) {
+                    expect(err.toString()).to.include("ConstraintSeeds");
+                }
+            });
+
+            it("should fail when providing wrong next_pot account", async () => {
+                // Set slots_to_win to small value
+                await program.methods
+                    .updateSettings({
+                        slotsToWin: new anchor.BN(5),
+                        newAuthority: null,
+                        newFeeAccount: null,
+                        bidValueRateBps: null,
+                        feeBps: null,
+                        potBps: null,
+                        nextBps: null,
+                        bidValue: null,
+                    })
+                    .accounts({ settings: settingsPda })
+                    .rpc();
+
+                const winner = Keypair.generate();
+                const wrongNextPot = Keypair.generate().publicKey;
+
+                const airdropSig = await provider.connection.requestAirdrop(winner.publicKey, LAMPORTS_PER_SOL);
+                await provider.connection.confirmTransaction(airdropSig);
+
+                const winnerProvider = new anchor.AnchorProvider(
+                    provider.connection,
+                    new anchor.Wallet(winner),
+                    provider.opts
+                );
+                const winnerProgram = new anchor.Program<Kotb>(program.idl as anchor.Idl, winnerProvider);
+
+                // Place a bid
+                await winnerProgram.methods.bid().accounts({ feeAccount: feeAccount }).rpc();
+
+                const stateAfterBid = await program.account.gameState.fetch(gameStatePda);
+                const finalSlot = stateAfterBid.finalSlot.toNumber();
+
+                // Wait until final_slot is reached
+                let currentSlot = await provider.connection.getSlot();
+                while (currentSlot < finalSlot) {
+                    await new Promise((resolve) => setTimeout(resolve, 400));
+                    currentSlot = await provider.connection.getSlot();
+                }
+
+                // Try to call endgame with wrong next_pot account - should fail with ConstraintSeeds
+                try {
+                    await program.methods
+                        .endgame()
+                        .accountsPartial({
+                            winner: winner.publicKey,
+                            nextPot: wrongNextPot,
+                        })
+                        .rpc();
+                    expect.fail("Should have thrown error");
+                } catch (err: any) {
+                    expect(err.toString()).to.include("ConstraintSeeds");
+                }
+            });
+        });
     });
 });

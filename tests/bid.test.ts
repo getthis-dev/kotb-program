@@ -502,5 +502,65 @@ describe("bid", () => {
                 }
             });
         });
+
+        describe("Invalid Pot Accounts", () => {
+            it("should fail when providing wrong pot account", async () => {
+                const bidder = Keypair.generate();
+                const wrongPot = Keypair.generate().publicKey;
+
+                const airdropSig = await provider.connection.requestAirdrop(bidder.publicKey, LAMPORTS_PER_SOL);
+                await provider.connection.confirmTransaction(airdropSig);
+
+                const bidderProvider = new anchor.AnchorProvider(
+                    provider.connection,
+                    new anchor.Wallet(bidder),
+                    provider.opts
+                );
+                const bidderProgram = new anchor.Program<Kotb>(program.idl as anchor.Idl, bidderProvider);
+
+                // Try to bid with wrong pot account - should fail with ConstraintSeeds
+                try {
+                    await bidderProgram.methods
+                        .bid()
+                        .accountsPartial({
+                            feeAccount: feeAccount,
+                            pot: wrongPot,
+                        })
+                        .rpc();
+                    expect.fail("Should have thrown error");
+                } catch (err: any) {
+                    expect(err.toString()).to.include("ConstraintSeeds");
+                }
+            });
+
+            it("should fail when providing wrong next_pot account", async () => {
+                const bidder = Keypair.generate();
+                const wrongNextPot = Keypair.generate().publicKey;
+
+                const airdropSig = await provider.connection.requestAirdrop(bidder.publicKey, LAMPORTS_PER_SOL);
+                await provider.connection.confirmTransaction(airdropSig);
+
+                const bidderProvider = new anchor.AnchorProvider(
+                    provider.connection,
+                    new anchor.Wallet(bidder),
+                    provider.opts
+                );
+                const bidderProgram = new anchor.Program<Kotb>(program.idl as anchor.Idl, bidderProvider);
+
+                // Try to bid with wrong next_pot account - should fail with ConstraintSeeds
+                try {
+                    await bidderProgram.methods
+                        .bid()
+                        .accountsPartial({
+                            feeAccount: feeAccount,
+                            nextPot: wrongNextPot,
+                        })
+                        .rpc();
+                    expect.fail("Should have thrown error");
+                } catch (err: any) {
+                    expect(err.toString()).to.include("ConstraintSeeds");
+                }
+            });
+        });
     });
 });
