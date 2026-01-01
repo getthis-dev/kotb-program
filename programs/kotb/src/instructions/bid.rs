@@ -73,13 +73,11 @@ pub struct Bid<'info> {
     #[account(seeds = [SETTINGS_SEED], bump)]
     pub settings: Account<'info, GameSettings>,
 
-    /// CHECK: PDA vault
     #[account(mut, seeds = [POT_SEED], bump)]
-    pub pot: UncheckedAccount<'info>,
+    pub pot: SystemAccount<'info>,
 
-    /// CHECK: PDA vault
     #[account(mut, seeds = [NEXT_POT_SEED], bump)]
-    pub next_pot: UncheckedAccount<'info>,
+    pub next_pot: SystemAccount<'info>,
 
     /// CHECK: fee_account from settings
     #[account(
