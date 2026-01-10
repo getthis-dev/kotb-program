@@ -49,8 +49,10 @@ cp target/deploy/kotb.so target/deploy/kotb-verified.so
 
 ### 3. Generate IDL (if needed)
 
+**IMPORTANT:** Use `--provider.cluster mainnet` to generate IDL with the correct program ID.
+
 ```bash
-anchor build --arch sbf -- --features mainnet
+anchor build --arch sbf --provider.cluster mainnet -- --features mainnet
 cp target/deploy/kotb-verified.so target/deploy/kotb.so
 ```
 
